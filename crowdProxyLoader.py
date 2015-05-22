@@ -53,9 +53,10 @@ def createCrowdCycleProxies(numOffsetsPerCycle=3):
         mainProgressBar.beginProgress()
         try:
             for crowdCycle in cycles:
-                step = (crowdCycle.endFrame - crowdCycle.startFrame) / numOffsetsPerCycle
-                for offset in range(crowdCycle.startFrame, crowdCycle.endFrame,
-                        step):
+                step = int (float(crowdCycle.endFrame - crowdCycle.startFrame)
+                        / numOffsetsPerCycle)
+                for stepNumber in range(numOffsetsPerCycle):
+                    offset = crowdCycle.startFrame + stepNumber * step
                     makeRsProxyFromCrowdCycle(crowdCycle, offset)
                     mainProgressBar.step()
                     if mainProgressBar.getIsCancelled():
