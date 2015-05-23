@@ -2,10 +2,10 @@ import pymel.core as pc
 from collections import namedtuple
 import os
 import re
+from string import Template
 
 CrowdCycle = namedtuple('crowdCycle', 'path startFrame endFrame')
 rsfilePattern = re.compile(r'(.*?\.?)(\d+)(\.rs)')
-
 
 defaultCrowdDirectory = r'P:\external\Al_Mansour_Season_02\Test\Raheel\CrowdAnimation\CrowdRSProxy'
 def findCrowdCycles(crowdDirectory=defaultCrowdDirectory):
@@ -33,18 +33,34 @@ def findCrowdCycles(crowdDirectory=defaultCrowdDirectory):
 
     return crowdCycles
 
+cycleExpression = '''
+int $startFrame = $s_startFrame;
+int $endFrame = $s_endFrame;
+int $offset = $s_offset;
+int $duration = $endFrame - $startFrame + 1;
+int $curFrame = $startFrame + (int(frame)+$offset)%($duration);
+$s_proxyFrameExtension = $curFrame;
+'''
 def makeRsProxyFromCrowdCycle(crowdCycle, offset=0):
     proxy, mesh, transform = (pc.PyNode(nodename) for nodename in pc.mel.redshiftCreateProxy())
     proxy.fileName.set(crowdCycle.path)
     proxy.useFrameExtension.set(True)
     proxy.displayMode.set(1)
-    proxy.frameOffset.set(offset)
+    data = {}
+    data['s_startFrame']=str(crowdCycle.startFrame)
+    data['s_endFrame']=str(crowdCycle.endFrame)
+    data['s_offset']=str(offset)
+    data['s_proxyFrameExtension']=str(proxy.frameExtension)
+    pc.expression(s=Template(cycleExpression).safe_substitute(data))
+    proxy.frameOffset.setLocked(True)
+    proxy.useFrameExtension.setLocked(True)
+    proxy.frameExtension.setLocked(True)
     return proxy, mesh, transform
 
 
 def createCrowdCycleProxies(numOffsetsPerCycle=3):
     directory = pc.fileDialog2(fm=2, cap='Location of crowdCycles',
-            startingDirectory=defaultCrowdDirectory)
+            startingDirectory=defaultCrowdDirectory, okc='Select Directory')
     if directory:
         cycles = findCrowdCycles(directory[0])
         mainProgressBar = pc.uitypes.PyUI(pc.MelGlobals.get('gMainProgressBar'))
