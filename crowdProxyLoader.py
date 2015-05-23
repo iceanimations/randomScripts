@@ -1,3 +1,8 @@
+'''
+filename: crowdProxyLoader.py
+
+Copyright ICE Animations (pvt) ltd
+'''
 import pymel.core as pc
 from collections import namedtuple
 import os
@@ -9,6 +14,7 @@ rsfilePattern = re.compile(r'(.*?\.?)(\d+)(\.rs)')
 
 defaultCrowdDirectory = r'P:\external\Al_Mansour_Season_02\Test\Raheel\CrowdAnimation\CrowdRSProxy'
 def findCrowdCycles(crowdDirectory=defaultCrowdDirectory):
+    ''' Search the given directory for numbered rs proxy files '''
     pathToNumbers = dict()
     for path, dirnames, filenames in os.walk(crowdDirectory):
 
@@ -42,6 +48,7 @@ int $curFrame = $startFrame + (int(frame)+$offset)%($duration);
 $s_proxyFrameExtension = $curFrame;
 '''
 def makeRsProxyFromCrowdCycle(crowdCycle, offset=0):
+    ''' Setup an redshiftProxy and load the crowdCycle in it '''
     proxy, mesh, transform = (pc.PyNode(nodename) for nodename in pc.mel.redshiftCreateProxy())
     proxy.fileName.set(crowdCycle.path)
     proxy.useFrameExtension.set(True)
@@ -59,14 +66,18 @@ def makeRsProxyFromCrowdCycle(crowdCycle, offset=0):
 
 
 def createCrowdCycleProxies(numOffsetsPerCycle=3):
+    ''' function to create Main crowd cycles '''
     directory = pc.fileDialog2(fm=2, cap='Location of crowdCycles',
             startingDirectory=defaultCrowdDirectory, okc='Select Directory')
+
     if directory:
         cycles = findCrowdCycles(directory[0])
+
         mainProgressBar = pc.uitypes.PyUI(pc.MelGlobals.get('gMainProgressBar'))
         mainProgressBar.setMaxValue(len(cycles)*numOffsetsPerCycle)
         mainProgressBar.setIsInterruptable(True)
         mainProgressBar.beginProgress()
+
         try:
             for crowdCycle in cycles:
                 step = int (float(crowdCycle.endFrame - crowdCycle.startFrame)
