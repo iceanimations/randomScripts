@@ -159,11 +159,14 @@ def layer_textures(seqs_fc, parts_exp):
     return main_texture, part_textures
 
 
-def connect_screen_texture_control(tex_dir, screen_n_ctrl):
+def connect_screen_texture_control(tex_dir, screen_n_ctrl=None):
+    if screen_n_ctrl is None:
+        screen_n_ctrl = pc.ls(sl=True, o=True)[:2]
     try:
-        screen, control = pc.ls(sl=True, o=True)[:2]
+        screen, control = screen_n_ctrl
     except ValueError:
         pc.error('Please select screen and control')
+
     seqs, parts = loadAnimatableTextureSequences(tex_dir)
     main_texture, part_textures = layer_textures(seqs, parts)
     pc.select(screen)
@@ -192,7 +195,7 @@ def connect_screen_texture_control(tex_dir, screen_n_ctrl):
 
 
 if __name__ == "__main__":
-    pc.openFile('D:/temp/elephant/scenes/smart_car_02.ma', f=True)
+    pc.openFile('D:/temp/elephant/scenes/smart_car_aaber_rig.ma', f=True)
     pc.select(['screen_geo', 'screen_ctrl'])
     screen, control = pc.ls(sl=True, o=True)
     tex_dir = r'd:/temp/pics/'
