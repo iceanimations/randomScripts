@@ -143,13 +143,16 @@ def layer_textures(seqs_fc, parts_exp):
 
     for num, (part, exps) in enumerate(parts_exp.items()):
         layered_texture = pc.shadingNode('layeredTexture', asTexture=True)
+        layered_texture.attr('inputs')[0].color.set(0, 0, 0)
+        layered_texture.attr('inputs')[0].isVisible.set(False)
+        layered_texture.attr('inputs')[0].blendMode.set(1)
 
         for num_exp, exp in enumerate(exps):
             file_node, _ = seqs_fc[exp]
 
             multiply_node = file_node.outColor.outputs()[0]
             multiply_node.output.connect(
-                    layered_texture.attr('inputs')[num_exp].color)
+                    layered_texture.attr('inputs')[num_exp+1].color)
 
         layered_texture.outColor.connect(
                 main_texture.attr('inputs')[num+1].color)
@@ -181,17 +184,24 @@ def connect_screen_texture_control(tex_dir, screen_n_ctrl=None):
     pc.addAttr(control, ln='frequency', at='double', dv=0.5, keyable=True)
     for part, exps in parts.items():
         part_texture = part_textures[part]
-        pc.select(control)
-        pc.addAttr(ln=part, at="long", min=0, max=len(exps)-1, dv=0,
+
+        pc.addAttr(control, ln=part+'Switch', at='bool', dv=True, keyable=True)
+        pc.addAttr(control, ln=part, at="long", min=0, max=len(exps)-1, dv=0,
                    hasMaxValue=True, hasMinValue=True, keyable=True)
+
         for num, exp in enumerate(exps):
             file_node = seqs[exp][0]
             place_node = file_node.coverage.inputs()[0]
             control.frequency.connect(place_node.frequency)
             switch_expr = ("%s.inputs[%d].isVisible = (%s==%d) ? 1: 0;")
             switch_expr = switch_expr % (
-                    part_texture.name(), num, control.name() + '.' + part, num)
+                    part_texture.name(), num+1, control.name() + '.' + part,
+                    num)
             pc.expression(s=switch_expr)
+
+        reverse_node = pc.shadingNode('reverse', asUtility=True)
+        control.attr(part+'Switch').connect(reverse_node.inputX)
+        reverse_node.outputX.connect(part_texture.attr('inputs')[0].isVisible)
 
 
 if __name__ == "__main__":
